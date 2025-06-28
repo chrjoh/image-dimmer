@@ -21,3 +21,11 @@ cargo run -- --url "https://some.image.url.jpg" --output-file test.png --gradien
 
 cargo run -- --url "https://some.image.url" --output-file test.png
 ```
+
+To speed up image processing compile the project with
+
+```
+cargo build --release
+```
+
+and run the the executable that is created here target/release/image-dimmer
