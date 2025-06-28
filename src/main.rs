@@ -1,8 +1,4 @@
-#![allow(unused_imports)]
-#![allow(dead_code)]
-#![allow(unused_variables)]
 use clap::Parser;
-use std::fmt;
 use std::str::FromStr;
 
 mod overlay;

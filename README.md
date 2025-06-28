@@ -8,7 +8,7 @@ fully transparent and then add overlay color on its way up to the top of the ima
 
 There are three options to select what color to use for the overlay:
 
-- The most dominat color in the image usin k-means
+- The most dominat color in the image using k-means
 - The most dominat color from the bottom row of the image
 - User supplied RGB values
 

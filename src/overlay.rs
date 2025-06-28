@@ -1,5 +1,3 @@
-#![allow(unused_imports)]
-#![allow(dead_code)]
 use image::{Rgba, RgbaImage, load_from_memory, open};
 use kmeans_colors::get_kmeans;
 use palette::{IntoColor, Lab, Srgb, cast::from_component_slice};
