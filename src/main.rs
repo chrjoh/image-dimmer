@@ -1,6 +1,6 @@
 use clap::Parser;
+use std::fmt;
 use std::str::FromStr;
-
 mod overlay;
 
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq)]
@@ -10,8 +10,25 @@ enum GradientType {
     UserDefined,
 }
 #[derive(Debug, Clone)]
-struct Rgb(u8, u8, u8);
+struct Fade(f32);
+impl FromStr for Fade {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let v = s.parse::<f32>().map_err(|_| "Invalide fade")?;
+        if v > 1.0 || v < 0.0 {
+            return Err("Allowed values are 0.0 to 1.0".to_string());
+        }
+        Ok(Fade(v))
+    }
+}
+impl fmt::Display for Fade {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.2}", self.0)
+    }
+}
 
+#[derive(Debug, Clone)]
+struct Rgb(u8, u8, u8);
 impl FromStr for Rgb {
     type Err = String;
 
@@ -20,7 +37,6 @@ impl FromStr for Rgb {
         if parts.len() != 3 {
             return Err("Expected format: R,G,B".into());
         }
-
         let r = parts[0]
             .trim()
             .parse::<u8>()
@@ -57,6 +73,9 @@ struct Args {
     /// R,G,B color values, 0-255,0-255,0-255
     #[arg(long)]
     rgb: Option<Rgb>,
+    /// Control how transparent the overlay should be at the bottom
+    #[arg(long, default_value_t=Fade(1.0))]
+    fade: Fade,
 }
 fn main() {
     let args = Args::parse();
@@ -73,9 +92,9 @@ fn main() {
         }
     };
     if let Some(url) = args.url {
-        overlay::generate_from_url(url, out_filename, gradient_variant);
+        overlay::generate_from_url(url, out_filename, gradient_variant, args.fade.0);
     } else if let Some(in_filename) = args.input_file {
-        overlay::generate(in_filename, out_filename, gradient_variant)
+        overlay::generate(in_filename, out_filename, gradient_variant, args.fade.0)
     }
     println!("Done")
 }

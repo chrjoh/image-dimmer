@@ -17,7 +17,12 @@ pub enum GradientColorType {
 /// and save the image to disk
 /// The overlay is constucted to got from the botom to 60% of the image hight where it will be no
 /// overlay and up to the top increasing the overlay color
-pub fn generate_from_url(url: String, out_file: String, gradient_variant: GradientColorType) {
+pub fn generate_from_url(
+    url: String,
+    out_file: String,
+    gradient_variant: GradientColorType,
+    fade: f32,
+) {
     let response = get(url).expect("Failed to fetch image");
     let bytes = response.bytes().expect("Failed to load image data");
     let dynamic_img = load_from_memory(&bytes).expect("Failed to load image from memory");
@@ -26,7 +31,7 @@ pub fn generate_from_url(url: String, out_file: String, gradient_variant: Gradie
 
     let gradient_rgb = select_gradient_color(gradient_variant, width, height, &img);
 
-    let output = create_overlay_image(width, height, gradient_rgb, img);
+    let output = create_overlay_image(width, height, gradient_rgb, img, fade);
     output.save(out_file).unwrap();
 }
 
@@ -34,14 +39,14 @@ pub fn generate_from_url(url: String, out_file: String, gradient_variant: Gradie
 /// and save the image to disk
 /// The overlay is constucted to got from the botom to 60% of the image hight where it will be no
 /// overlay and up to the top increasing the overlay color
-pub fn generate(in_file: String, out_file: String, gradient_variant: GradientColorType) {
+pub fn generate(in_file: String, out_file: String, gradient_variant: GradientColorType, fade: f32) {
     let img = open(in_file).unwrap().to_rgba8();
 
     let (width, height) = img.dimensions();
 
     let gradient_rgb = select_gradient_color(gradient_variant, width, height, &img);
 
-    let output = create_overlay_image(width, height, gradient_rgb, img);
+    let output = create_overlay_image(width, height, gradient_rgb, img, fade);
     output.save(out_file).unwrap();
 }
 
@@ -74,14 +79,20 @@ fn create_overlay_image(
     height: u32,
     gradient_rgb: Srgb<u8>,
     img: image::ImageBuffer<Rgba<u8>, Vec<u8>>,
+    fade: f32,
 ) -> image::ImageBuffer<Rgba<u8>, Vec<u8>> {
     let mut output = RgbaImage::new(width, height);
     for y in 0..height {
         // bottom - middle -top
         let normalized_y = y as f32 / height as f32;
+        let factor = if y as f32 > ((1.0 - 0.4) * height as f32 / 2f32).round() {
+            fade
+        } else {
+            1.0
+        };
         // if 0.5 0 at middle, 1 at top/bottom, otherwise shift position toward top/bottom
         let distance_from_middle = (normalized_y - 0.4).abs() * 2.0;
-        let alpha = distance_from_middle.powf(2.0);
+        let alpha = factor * distance_from_middle.powf(2.0);
 
         // bottom to top
         //let alpha = (y as f32 / height as f32).powf(2.0);
@@ -172,6 +183,7 @@ mod tests {
             url,
             out_path.to_str().unwrap().to_string(),
             GradientColorType::UserSelected(50, 50, 50),
+            1.0,
         );
 
         // Assert the output file exists and is a valid image
@@ -194,6 +206,7 @@ mod tests {
             input_file.path().to_str().unwrap().to_string(),
             output_path.to_str().unwrap().to_string(),
             GradientColorType::Dominant,
+            1.0,
         );
 
         assert!(output_path.exists(), "Output file was not created");
@@ -237,7 +250,7 @@ mod tests {
         let dominant_color = Srgb::new(255, 0, 0); // Red
 
         let img = dummy_image(width, height, base_color);
-        let result = create_overlay_image(width, height, dominant_color, img);
+        let result = create_overlay_image(width, height, dominant_color, img, 1.0);
 
         assert_eq!(result.width(), width);
         assert_eq!(result.height(), height);
@@ -251,7 +264,7 @@ mod tests {
         let dominant_color = Srgb::new(255, 0, 0); // Red
 
         let img = dummy_image(width, height, base_color);
-        let result = create_overlay_image(width, height, dominant_color, img);
+        let result = create_overlay_image(width, height, dominant_color, img, 1.0);
 
         // Check that the output pixel is not the same as the base (i.e., blending occurred)
         let top_pixel = result.get_pixel(0, 0);
