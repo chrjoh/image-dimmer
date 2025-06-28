@@ -129,12 +129,10 @@ mod tests {
     use super::*;
     use httpmock::Method::GET;
     use httpmock::MockServer;
-    use image::ColorType;
     use image::codecs::png::PngEncoder;
     use image::{ExtendedColorType, ImageBuffer, ImageEncoder, Rgba, RgbaImage};
     use palette::Srgb;
     use std::fs;
-    use std::io::Cursor;
     use std::path::Path;
     use tempfile::{Builder, NamedTempFile};
 
